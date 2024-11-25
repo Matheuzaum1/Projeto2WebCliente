@@ -1,48 +1,87 @@
-document.getElementById('form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Previne o comportamento padrão do formulário
+// IndexedDB setup
+const dbName = "UserDatabase";
+let db;
 
-    const nameInput = document.getElementById('name');
-    const name = nameInput.value.trim();
-    const tableBody = document.querySelector('#table tbody');
-    const rows = Array.from(tableBody.querySelectorAll('tr'));
+// WebSocket setup
+const socket = new WebSocket("ws://localhost:8080");
 
-    // Verifica se o nome já existe na tabela
-    const isDuplicate = rows.some(row => row.firstElementChild.textContent === name);
+socket.onopen = () => console.log("WebSocket connected.");
+socket.onmessage = (event) => console.log("Message from server:", event.data);
 
-    if (isDuplicate) {
-        alert('O nome já está na tabela. Por favor, insira um nome diferente.');
-        nameInput.focus();
-        return;
-    }
+window.onload = () => {
+    const request = indexedDB.open(dbName, 1);
 
-    if (name) {
-        // Cria uma nova linha
-        const row = document.createElement('tr');
+    request.onupgradeneeded = (event) => {
+        db = event.target.result;
+        if (!db.objectStoreNames.contains("users")) {
+            db.createObjectStore("users", { keyPath: "username" });
+        }
+    };
 
-        // Cria a célula para o nome
-        const nameCell = document.createElement('td');
-        nameCell.textContent = name;
+    request.onsuccess = (event) => {
+        db = event.target.result;
+        console.log("IndexedDB initialized.");
+    };
 
-        // Cria a célula para o botão de exclusão
-        const actionCell = document.createElement('td');
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Excluir';
-        deleteButton.addEventListener('click', function() {
-            tableBody.removeChild(row);
-        });
+    request.onerror = (event) => {
+        console.error("IndexedDB error:", event.target.error);
+    };
 
-        actionCell.appendChild(deleteButton);
+    document.getElementById("registerForm").addEventListener("submit", registerUser);
+    document.getElementById("loginForm").addEventListener("submit", loginUser);
+};
 
-        // Adiciona as células na linha
-        row.appendChild(nameCell);
-        row.appendChild(actionCell);
+// Register user
+function registerUser(event) {
+    event.preventDefault();
+    const username = document.getElementById("registerUsername").value;
+    const password = document.getElementById("registerPassword").value;
 
-        // Adiciona a linha na tabela
-        tableBody.appendChild(row);
+    const userData = JSON.stringify({ username, password });
+    const transaction = db.transaction(["users"], "readwrite");
+    const store = transaction.objectStore("users");
 
-        // Limpa o campo de entrada
-        nameInput.value = '';
-    } else {
-        alert('Por favor, insira um nome válido.');
-    }
-});
+    store.add({ username, password }).onsuccess = () => {
+        document.cookie = `user=${username}; path=/;`;
+        alert("Cadastro realizado com sucesso!");
+
+        // Send data to server via WebSocket
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(userData);
+        }
+    };
+
+    transaction.onerror = (event) => {
+        alert("Erro ao cadastrar: " + event.target.error);
+    };
+}
+
+// Login user
+function loginUser(event) {
+    event.preventDefault();
+    const username = document.getElementById("loginUsername").value;
+    const password = document.getElementById("loginPassword").value;
+
+    const transaction = db.transaction(["users"], "readonly");
+    const store = transaction.objectStore("users");
+
+    const request = store.get(username);
+    request.onsuccess = () => {
+        if (request.result && request.result.password === password) {
+            document.cookie = `user=${username}; path=/;`;
+            alert("Login bem-sucedido!");
+
+            // Send login status to server
+            const loginData = JSON.stringify({ action: "login", username });
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(loginData);
+            }
+        } else {
+            alert("Usuário ou senha incorretos.");
+        }
+    };
+
+    request.onerror = (event) => {
+        alert("Erro ao realizar login.");
+    };
+}
