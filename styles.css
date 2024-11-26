@@ -1,26 +1,21 @@
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    padding: 20px;
     background-color: #f4f4f9;
 }
 
 .container {
-    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
     padding: 20px;
-    border: 1px solid #ddd;
-    background-color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    width: 300px;
-    border-radius: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-h1, h2 {
-    color: #333;
+h1 {
+    text-align: center;
 }
 
 form {
@@ -30,27 +25,52 @@ form {
 label {
     display: block;
     margin-top: 10px;
-    text-align: left;
 }
 
 input {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 button {
-    margin-top: 10px;
+    width: 100%;
     padding: 10px;
-    background-color: #007BFF;
+    margin-top: 20px;
+    background-color: #4CAF50;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #45a049;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table th, table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+table th {
+    background-color: #f2f2f2;
+}
+
+button#logout {
+    margin-top: 20px;
+    background-color: #f44336;
+}
+
+button#logout:hover {
+    background-color: #d32f2f;
 }

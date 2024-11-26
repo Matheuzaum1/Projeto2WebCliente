@@ -1,87 +1,84 @@
-// IndexedDB setup
-const dbName = "UserDatabase";
-let db;
+// Gerenciar usuários no localStorage
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const financeForm = document.getElementById('financeForm');
+    const financeTable = document.getElementById('financeTable');
+    const logoutButton = document.getElementById('logout');
 
-// WebSocket setup
-const socket = new WebSocket("ws://localhost:8080");
+    // Login
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-socket.onopen = () => console.log("WebSocket connected.");
-socket.onmessage = (event) => console.log("Message from server:", event.data);
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(user => user.username === username && user.password === password);
 
-window.onload = () => {
-    const request = indexedDB.open(dbName, 1);
-
-    request.onupgradeneeded = (event) => {
-        db = event.target.result;
-        if (!db.objectStoreNames.contains("users")) {
-            db.createObjectStore("users", { keyPath: "username" });
-        }
-    };
-
-    request.onsuccess = (event) => {
-        db = event.target.result;
-        console.log("IndexedDB initialized.");
-    };
-
-    request.onerror = (event) => {
-        console.error("IndexedDB error:", event.target.error);
-    };
-
-    document.getElementById("registerForm").addEventListener("submit", registerUser);
-    document.getElementById("loginForm").addEventListener("submit", loginUser);
-};
-
-// Register user
-function registerUser(event) {
-    event.preventDefault();
-    const username = document.getElementById("registerUsername").value;
-    const password = document.getElementById("registerPassword").value;
-
-    const userData = JSON.stringify({ username, password });
-    const transaction = db.transaction(["users"], "readwrite");
-    const store = transaction.objectStore("users");
-
-    store.add({ username, password }).onsuccess = () => {
-        document.cookie = `user=${username}; path=/;`;
-        alert("Cadastro realizado com sucesso!");
-
-        // Send data to server via WebSocket
-        if (socket.readyState === WebSocket.OPEN) {
-            socket.send(userData);
-        }
-    };
-
-    transaction.onerror = (event) => {
-        alert("Erro ao cadastrar: " + event.target.error);
-    };
-}
-
-// Login user
-function loginUser(event) {
-    event.preventDefault();
-    const username = document.getElementById("loginUsername").value;
-    const password = document.getElementById("loginPassword").value;
-
-    const transaction = db.transaction(["users"], "readonly");
-    const store = transaction.objectStore("users");
-
-    const request = store.get(username);
-    request.onsuccess = () => {
-        if (request.result && request.result.password === password) {
-            document.cookie = `user=${username}; path=/;`;
-            alert("Login bem-sucedido!");
-
-            // Send login status to server
-            const loginData = JSON.stringify({ action: "login", username });
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(loginData);
+            if (user) {
+                document.cookie = `user=${username}; path=/`;
+                window.location.href = 'app.html';
+            } else {
+                alert('Usuário ou senha inválidos!');
             }
-        } else {
-            alert("Usuário ou senha incorretos.");
-        }
-    };
+        });
+    }
 
-    request.onerror = (event) => {
-        alert("Erro ao realizar login.");
-    };
-}
+    // Cadastro
+    if (registerForm) {
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newUsername = document.getElementById('newUsername').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            if (users.some(user => user.username === newUsername)) {
+                alert('Usuário já cadastrado!');
+                return;
+            }
+
+            users.push({ username: newUsername, password: newPassword });
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('Cadastro realizado com sucesso!');
+            window.location.href = 'index.html';
+        });
+    }
+
+    // Página do app
+    if (financeForm && financeTable) {
+        const userCookie = document.cookie.split('; ').find(row => row.startsWith('user='));
+        const currentUser = userCookie ? userCookie.split('=')[1] : null;
+
+        if (!currentUser) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        document.getElementById('welcomeUser').textContent = currentUser;
+
+        financeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${description}</td>
+                <td>R$ ${amount.toFixed(2)}</td>
+                <td><button class="deleteBtn">Excluir</button></td>
+            `;
+
+            financeTable.querySelector('tbody').appendChild(row);
+
+            row.querySelector('.deleteBtn').addEventListener('click', () => {
+                row.remove();
+            });
+        });
+
+        logoutButton.addEventListener('click', () => {
+            document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
+            window.location.href = 'index.html';
+        });
+    }
+});

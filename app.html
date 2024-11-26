@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Bem-vindo, <span id="welcomeUser"></span>!</h1>
+        <div>
+            <h2>Suas Finanças</h2>
+            <form id="financeForm">
+                <label for="description">Descrição:</label>
+                <input type="text" id="description" required>
+                <label for="amount">Valor (R$):</label>
+                <input type="number" id="amount" step="0.01" required>
+                <button type="submit">Adicionar</button>
+            </form>
+            <table id="financeTable">
+                <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dados adicionados dinamicamente -->
+                </tbody>
+            </table>
+        </div>
+        <button id="logout">Sair</button>
+    </div>
+    <script src="db.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
